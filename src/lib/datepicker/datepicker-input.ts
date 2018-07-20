@@ -363,3 +363,25 @@ export class MatDatepickerInput<D> implements ControlValueAccessor, OnDestroy, V
     return (this._dateAdapter.isDateInstance(obj) && this._dateAdapter.isValid(obj)) ? obj : null;
   }
 }
+
+@Directive({
+  selector: 'input[matDatepickerStart]',
+  exportAs: 'matDatepickerInputStart',
+})
+export class MatDatepickerInputStart<D> extends MatDatepickerInput<D> {
+  @Input()
+  set matDatepickerStart(value: MatDatepicker<D>) {
+    this.matDatepicker = value;
+  }
+}
+
+@Directive({
+  selector: 'input[matDatepickerEnd]',
+  exportAs: 'matDatepickerInputEnd',
+})
+export class MatDatepickerInputEnd<D> extends MatDatepickerInput<D> {
+  @Input()
+  set matDatepickerEnd(value: MatDatepicker<D>) {
+    this.matDatepicker = value;
+  }
+}

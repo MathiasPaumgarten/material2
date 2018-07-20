@@ -154,3 +154,15 @@
     <mat-datepicker #customHeaderPicker [calendarHeaderComponent]="customHeader"></mat-datepicker>
   </mat-form-field>
 </p>
+
+<h2>Datepicker with date range</h2>
+<p>
+  <mat-datepicker-toggle [for]="datePicker5"></mat-datepicker-toggle>
+  <mat-form-field>
+    <input matInput
+           [matDatepickerStart]="datePicker5">
+    <input matInput
+           [matDatepickerEnd]="datePicker5">
+    <mat-datepicker #datePicker5></mat-datepicker>
+  </mat-form-field>
+</p>

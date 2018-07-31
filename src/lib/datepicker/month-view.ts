@@ -34,6 +34,7 @@ import {DateAdapter, MAT_DATE_FORMATS, MatDateFormats} from '@angular/material/c
 import {Directionality} from '@angular/cdk/bidi';
 import {MatCalendarBody, MatCalendarCell} from './calendar-body';
 import {createMissingDateImplError} from './datepicker-errors';
+import {MatDateRange} from './datepicker-range-input';
 
 
 const DAYS_PER_WEEK = 7;
@@ -77,6 +78,13 @@ export class MatMonthView<D> implements AfterContentInit {
   }
   private _selected: D | null;
 
+  @Input()
+  get range(): MatDateRange<D> | null { return this._range; }
+  set range(value: MatDateRange<D> | null) {
+    this._range = value;
+  }
+  private _range: MatDateRange<D> | null;
+
   /** The minimum selectable date. */
   @Input()
   get minDate(): D | null { return this._minDate; }
@@ -98,6 +106,7 @@ export class MatMonthView<D> implements AfterContentInit {
 
   /** Emits when a new date is selected. */
   @Output() readonly selectedChange: EventEmitter<D | null> = new EventEmitter<D | null>();
+  @Output() readonly rangeChange = new EventEmitter<MatDateRange<D> | null>();
 
   /** Emits when any date is selected. */
   @Output() readonly _userSelection: EventEmitter<void> = new EventEmitter<void>();
@@ -129,6 +138,8 @@ export class MatMonthView<D> implements AfterContentInit {
   /** The names of the weekdays. */
   _weekdays: {long: string, narrow: string}[];
 
+  private selectionIndex = 0;
+
   constructor(private _changeDetectorRef: ChangeDetectorRef,
               @Optional() @Inject(MAT_DATE_FORMATS) private _dateFormats: MatDateFormats,
               @Optional() public _dateAdapter: DateAdapter<D>,
@@ -159,15 +170,25 @@ export class MatMonthView<D> implements AfterContentInit {
 
   /** Handles when a new date is selected. */
   _dateSelected(date: number) {
-    if (this._selectedDate != date) {
-      const selectedYear = this._dateAdapter.getYear(this.activeDate);
-      const selectedMonth = this._dateAdapter.getMonth(this.activeDate);
-      const selectedDate = this._dateAdapter.createDate(selectedYear, selectedMonth, date);
+    if (this._range) {
+      if (this.selectionIndex === 0) {
+        // first selection
+        this._range.from = this._makeDate(date);
+        this.selectionIndex++;
+      } else {
+        // second selection
+        this._range.to = this._makeDate(date);
+        this.rangeChange.next(this._range);
 
-      this.selectedChange.emit(selectedDate);
+        this._userSelection.emit();
+      }
+    } else {
+      if (this._selectedDate != date) {
+        this.selectedChange.emit(this._makeDate(date));
+      }
+
+      this._userSelection.emit();
     }
-
-    this._userSelection.emit();
   }
 
   /** Handles keydown events on the calendar body when calendar is in month view. */
@@ -310,5 +331,11 @@ export class MatMonthView<D> implements AfterContentInit {
   /** Determines whether the user has the RTL layout direction. */
   private _isRtl() {
     return this._dir && this._dir.value === 'rtl';
+  }
+
+  private _makeDate(date: number): D {
+    const selectedYear = this._dateAdapter.getYear(this.activeDate);
+    const selectedMonth = this._dateAdapter.getMonth(this.activeDate);
+    return this._dateAdapter.createDate(selectedYear, selectedMonth, date);
   }
 }

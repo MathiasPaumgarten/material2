@@ -44,7 +44,7 @@ import {createMissingDateImplError} from './datepicker-errors';
 import {MatDatepickerInput} from './datepicker-input';
 import {MatCalendar} from './calendar';
 import {matDatepickerAnimations} from './datepicker-animations';
-import { MatDatepickerRange } from './datepicker-range-input';
+import {MatDatepickerRange, MatDateRange} from './datepicker-range-input';
 
 /** Used to generate a unique ID for each datepicker instance. */
 let datepickerUid = 0;
@@ -225,6 +225,8 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
   set _selected(value: D | null) { this._validSelected = value; }
   private _validSelected: D | null = null;
 
+  _selectedRange: MatDateRange<D> | null;
+
   /** The minimum selectable date. */
   get _minDate(): D | null {
     return this._datepickerInput && this._datepickerInput.min;
@@ -260,13 +262,17 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
   /** The input element this datepicker is associated with. */
   _datepickerInput: MatDatepickerInput<D>;
 
-  _datepickerInputRange: MatDatepickerRange<D>;
+  _datepickerRange: MatDatepickerRange<D>;
+
+  private _input: MatDatepickerInput<D> | MatDatepickerRange<D>;
 
   /** Emits when the datepicker is disabled. */
   readonly _disabledChange = new Subject<boolean>();
 
   /** Emits new selected date when selected date changes. */
   readonly _selectedChanged = new Subject<D>();
+
+  readonly _selectedRangeChanged = new Subject<MatDateRange<D>>();
 
   constructor(private _dialog: MatDialog,
               private _overlay: Overlay,
@@ -301,6 +307,11 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
     }
   }
 
+  _selectRange(date: MatDateRange<D>): void {
+    this._selectedRange = date;
+    this._selectedRangeChanged.next(date);
+  }
+
   /** Emits the selected year in multiyear view */
   _selectYear(normalizedYear: D): void {
     this.yearSelected.emit(normalizedYear);
@@ -320,12 +331,17 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
       throw Error('A MatDatepicker can only be associated with a single input.');
     }
     this._datepickerInput = input;
+    this._input = input;
     this._inputSubscription =
         this._datepickerInput._valueChange.subscribe((value: D | null) => this._selected = value);
   }
 
-  _registerInputRange(input: MatDatepickerRange<D>): void {
-
+  _registerInputRange(range: MatDatepickerRange<D>): void {
+    this._datepickerRange = range;
+    this._input = range;
+    this._selectedRange = range.value;
+    this._datepickerRange._valueChange.subscribe(
+      (value: MatDateRange<D>) => this._selectedRange = value);
   }
 
   /** Open the calendar. */
@@ -333,7 +349,7 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
     if (this._opened || this.disabled) {
       return;
     }
-    if (!this._datepickerInput) {
+    if (!this._datepickerInput && !this._datepickerRange) {
       throw Error('Attempted to open an MatDatepicker with no associated input.');
     }
     if (this._document) {
@@ -441,7 +457,7 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
       this._popupRef.keydownEvents().pipe(filter(event => {
         // Closing on alt + up is only valid when there's an input associated with the datepicker.
         return event.keyCode === ESCAPE ||
-               (this._datepickerInput && event.altKey && event.keyCode === UP_ARROW);
+               (this._input && event.altKey && event.keyCode === UP_ARROW);
       }))
     ).subscribe(() => this.close());
   }

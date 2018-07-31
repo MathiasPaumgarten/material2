@@ -159,10 +159,10 @@
 <p>
   <mat-datepicker-toggle [for]="datePicker5"></mat-datepicker-toggle>
   <mat-form-field>
-    <input matInput
-           [matDatepickerStart]="datePicker5">
-    <input matInput
-           [matDatepickerEnd]="datePicker5">
+    <mat-datepicker-range [matDatepicker]="datePicker5">
+      <input matRangeStart/>
+      <input matRangeEnd/>
+    </mat-datepicker-range>
     <mat-datepicker #datePicker5></mat-datepicker>
   </mat-form-field>
 </p>

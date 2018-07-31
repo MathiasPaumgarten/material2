@@ -32,6 +32,7 @@ import {MatDatepickerIntl} from './datepicker-intl';
 import {MatMonthView} from './month-view';
 import {MatMultiYearView, yearsPerPage} from './multi-year-view';
 import {MatYearView} from './year-view';
+import {MatDateRange} from './datepicker-range-input';
 
 /**
  * Possible views for the calendar.
@@ -204,6 +205,14 @@ export class MatCalendar<D> implements AfterContentInit, AfterViewChecked, OnDes
   }
   private _selected: D | null;
 
+  @Input()
+  get range(): MatDateRange<D> | null { return this._selectedRange; }
+  set range(value: MatDateRange<D> | null) {
+    this._selectedRange = value;
+  }
+
+  private _selectedRange: MatDateRange<D> | null;
+
   /** The minimum selectable date. */
   @Input()
   get minDate(): D | null { return this._minDate; }
@@ -225,6 +234,7 @@ export class MatCalendar<D> implements AfterContentInit, AfterViewChecked, OnDes
 
   /** Emits when the currently selected date changes. */
   @Output() readonly selectedChange: EventEmitter<D> = new EventEmitter<D>();
+  @Output() readonly selectedRangeChange = new EventEmitter<MatDateRange<D>>();
 
   /**
    * Emits the year chosen in multiyear view.
@@ -347,6 +357,10 @@ export class MatCalendar<D> implements AfterContentInit, AfterViewChecked, OnDes
     if (!this._dateAdapter.sameDate(date, this.selected)) {
       this.selectedChange.emit(date);
     }
+  }
+
+  _rangeSelected(date: MatDateRange<D>): void {
+    this.selectedRangeChange.emit(date);
   }
 
   /** Handles year selection in the multiyear view. */

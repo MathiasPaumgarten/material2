@@ -34,7 +34,7 @@ import {DateAdapter, MAT_DATE_FORMATS, MatDateFormats} from '@angular/material/c
 import {Directionality} from '@angular/cdk/bidi';
 import {MatCalendarBody, MatCalendarCell} from './calendar-body';
 import {createMissingDateImplError} from './datepicker-errors';
-import {MatDateRange} from './datepicker-range-input';
+import {MatDateSelection} from './datepicker-selection';
 
 
 const DAYS_PER_WEEK = 7;
@@ -71,19 +71,14 @@ export class MatMonthView<D> implements AfterContentInit {
 
   /** The currently selected date. */
   @Input()
-  get selected(): D | null { return this._selected; }
-  set selected(value: D | null) {
-    this._selected = this._getValidDateOrNull(this._dateAdapter.deserialize(value));
+  get selected(): MatDateSelection<D> | null { return this._selected; }
+  set selected(value: MatDateSelection<D> | null) {
+    // validate necessity for this:
+    // this._selected = this._getValidDateOrNull(this._dateAdapter.deserialize(value));
+    this._selected = value ? value.clone(this._dateAdapter) : null;
     this._selectedDate = this._getDateInCurrentMonth(this._selected);
   }
-  private _selected: D | null;
-
-  @Input()
-  get range(): MatDateRange<D> | null { return this._range; }
-  set range(value: MatDateRange<D> | null) {
-    this._range = value;
-  }
-  private _range: MatDateRange<D> | null;
+  private _selected: MatDateSelection<D> | null;
 
   /** The minimum selectable date. */
   @Input()
@@ -105,8 +100,7 @@ export class MatMonthView<D> implements AfterContentInit {
   @Input() dateFilter: (date: D) => boolean;
 
   /** Emits when a new date is selected. */
-  @Output() readonly selectedChange: EventEmitter<D | null> = new EventEmitter<D | null>();
-  @Output() readonly rangeChange = new EventEmitter<MatDateRange<D> | null>();
+  @Output() readonly selectedChange = new EventEmitter<MatDateSelection<D> | null>();
 
   /** Emits when any date is selected. */
   @Output() readonly _userSelection: EventEmitter<void> = new EventEmitter<void>();
@@ -138,8 +132,6 @@ export class MatMonthView<D> implements AfterContentInit {
   /** The names of the weekdays. */
   _weekdays: {long: string, narrow: string}[];
 
-  private selectionIndex = 0;
-
   constructor(private _changeDetectorRef: ChangeDetectorRef,
               @Optional() @Inject(MAT_DATE_FORMATS) private _dateFormats: MatDateFormats,
               @Optional() public _dateAdapter: DateAdapter<D>,
@@ -170,21 +162,16 @@ export class MatMonthView<D> implements AfterContentInit {
 
   /** Handles when a new date is selected. */
   _dateSelected(date: number) {
-    if (this._range) {
-      if (this.selectionIndex === 0) {
-        // first selection
-        this._range.from = this._makeDate(date);
-        this.selectionIndex++;
-      } else {
-        // second selection
-        this._range.to = this._makeDate(date);
-        this.rangeChange.next(this._range);
+    if (this._selected && this._selected.isRange) {
+      this._selected.setNext(this._makeDate(date));
 
+      if (this._selected.isComplete) {
+        this.selectedChange.emit(this._selected);
         this._userSelection.emit();
       }
     } else {
       if (this._selectedDate != date) {
-        this.selectedChange.emit(this._makeDate(date));
+        this.selectedChange.emit(this._makeDateSelection(date));
       }
 
       this._userSelection.emit();
@@ -257,7 +244,8 @@ export class MatMonthView<D> implements AfterContentInit {
   /** Initializes this month view. */
   _init() {
     this._selectedDate = this._getDateInCurrentMonth(this.selected);
-    this._todayDate = this._getDateInCurrentMonth(this._dateAdapter.today());
+    this._todayDate =
+        this._getDateInCurrentMonth(new MatDateSelection<D>(this._dateAdapter.today()));
     this._monthLabel =
         this._dateAdapter.getMonthNames('short')[this._dateAdapter.getMonth(this.activeDate)]
             .toLocaleUpperCase();
@@ -309,9 +297,10 @@ export class MatMonthView<D> implements AfterContentInit {
    * Gets the date in this month that the given Date falls on.
    * Returns null if the given Date is in another month.
    */
-  private _getDateInCurrentMonth(date: D | null): number | null {
-    return date && this._hasSameMonthAndYear(date, this.activeDate) ?
-        this._dateAdapter.getDate(date) : null;
+  private _getDateInCurrentMonth(selection: MatDateSelection<D> | null): number | null {
+    return selection && selection.date &&
+        this._hasSameMonthAndYear(selection.date, this.activeDate) ?
+            this._dateAdapter.getDate(selection.date) : null;
   }
 
   /** Checks whether the 2 dates are non-null and fall within the same month of the same year. */
@@ -337,5 +326,9 @@ export class MatMonthView<D> implements AfterContentInit {
     const selectedYear = this._dateAdapter.getYear(this.activeDate);
     const selectedMonth = this._dateAdapter.getMonth(this.activeDate);
     return this._dateAdapter.createDate(selectedYear, selectedMonth, date);
+  }
+
+  private _makeDateSelection(date: number): MatDateSelection<D> {
+    return new MatDateSelection(this._makeDate(date));
   }
 }

@@ -25,14 +25,11 @@ import { MatDatepicker } from './datepicker';
 import { Subject } from 'rxjs';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import {DateAdapter, MAT_DATE_FORMATS, MatDateFormats} from '@angular/material/core';
+import {MatDateSelection} from './datepicker-selection';
+import {MatBaseDatepickerInput} from './datepicker-input';
 
 
 let nextUniqueId = 0;
-
-export interface MatDateRange<D> {
-  from: D | null;
-  to: D | null;
-}
 
 // Largly copied from datepicker-input. there is definitley a better way for this
 // I didn't want to set matInput directives as that screws up the rest of the logic.
@@ -91,7 +88,8 @@ export class MatRangeEnd<D> extends RangeInput<D> {}
   template: `<ng-content></ng-content>`,
   providers: [{provide: MatFormFieldControl, useExisting: MatDatepickerRange}],
 })
-export class MatDatepickerRange<D> implements AfterContentInit, MatFormFieldControl<any> {
+export class MatDatepickerRange<D> extends MatBaseDatepickerInput<D>
+                                   implements AfterContentInit, MatFormFieldControl<any> {
   protected _uid = `mat-datepicker-range-${nextUniqueId++}`;
 
   @ContentChild(MatRangeStart) start: MatRangeStart<D>;
@@ -100,22 +98,20 @@ export class MatDatepickerRange<D> implements AfterContentInit, MatFormFieldCont
   @Input()
   set matDatepicker(value: MatDatepicker<D>) {
     this._matDatepicker = value;
-    this.setup();
   }
   private _matDatepicker: MatDatepicker<D>;
 
-  get value(): MatDateRange<D> {
-    return {
-      from: this.start.value,
-      to: this.end.value
-    };
+  get value(): MatDateSelection<D> | null {
+    return this._value;
   }
-  set value(range: MatDateRange<D>) {
-    this.start.value = range.from;
-    this.end.value = range.to;
+  set value(range: MatDateSelection<D> | null) {
+    if (range) {
+      this.start.value = range.start;
+      this.end.value = range.end;
+    }
+    this._value = range;
   }
-
-  _valueChange = new Subject<MatDateRange<D>>();
+  private _value: MatDateSelection<D> | null;
 
   /**
    * Stream that emits whenever the state of the control changes such that the parent `MatFormField`
@@ -130,16 +126,16 @@ export class MatDatepickerRange<D> implements AfterContentInit, MatFormFieldCont
   ngAfterContentInit() {
     this.setup();
     if (this._matDatepicker) {
-      this._matDatepicker._selectedRangeChanged.subscribe((selected: MatDateRange<D>) => {
-        this.start.value = selected.from;
-        this.end.value = selected.to;
+      this._matDatepicker._selectedChanged.subscribe((selected: MatDateSelection<D>) => {
+        this.start.value = selected.start;
+        this.end.value = selected.end;
       });
     }
   }
 
   private setup() {
     if (this._matDatepicker && this.start && this.end) {
-      this._matDatepicker._registerInputRange(this);
+      this._matDatepicker._registerInput(this);
     }
   }
 
@@ -210,7 +206,16 @@ export class MatDatepickerRange<D> implements AfterContentInit, MatFormFieldCont
   constructor(
     private _formField: MatFormField,
       private _elementRef: ElementRef,
-  ) {}
+  ) {
+    super();
+    this.selection = new MatDateSelection<D>(null, null);
+    this._value = this.selection;
+  }
+
+  /** Returns the palette used by the input's form field, if any. */
+  _getThemePalette() {
+    return this._formField ? this._formField.color : undefined;
+  }
 
   /** Sets the list of element IDs that currently describe this control. */
   // @ts-ignore

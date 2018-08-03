@@ -32,7 +32,7 @@ import {MatDatepickerIntl} from './datepicker-intl';
 import {MatMonthView} from './month-view';
 import {MatMultiYearView, yearsPerPage} from './multi-year-view';
 import {MatYearView} from './year-view';
-import {MatDateRange} from './datepicker-range-input';
+import {MatDateSelection} from './datepicker-selection';
 
 /**
  * Possible views for the calendar.
@@ -199,19 +199,13 @@ export class MatCalendar<D> implements AfterContentInit, AfterViewChecked, OnDes
 
   /** The currently selected date. */
   @Input()
-  get selected(): D | null { return this._selected; }
-  set selected(value: D | null) {
-    this._selected = this._getValidDateOrNull(this._dateAdapter.deserialize(value));
+  get selected(): MatDateSelection<D> | null { return this._selected; }
+  set selected(value: MatDateSelection<D> | null) {
+    // Evaluate the necessity for validation.
+    // this._selected = this._getValidDateOrNull(this._dateAdapter.deserialize(value));
+    this._selected = value;
   }
-  private _selected: D | null;
-
-  @Input()
-  get range(): MatDateRange<D> | null { return this._selectedRange; }
-  set range(value: MatDateRange<D> | null) {
-    this._selectedRange = value;
-  }
-
-  private _selectedRange: MatDateRange<D> | null;
+  private _selected: MatDateSelection<D> | null;
 
   /** The minimum selectable date. */
   @Input()
@@ -233,8 +227,7 @@ export class MatCalendar<D> implements AfterContentInit, AfterViewChecked, OnDes
   @Input() dateFilter: (date: D) => boolean;
 
   /** Emits when the currently selected date changes. */
-  @Output() readonly selectedChange: EventEmitter<D> = new EventEmitter<D>();
-  @Output() readonly selectedRangeChange = new EventEmitter<MatDateRange<D>>();
+  @Output() readonly selectedChange = new EventEmitter<MatDateSelection<D>>();
 
   /**
    * Emits the year chosen in multiyear view.
@@ -353,14 +346,10 @@ export class MatCalendar<D> implements AfterContentInit, AfterViewChecked, OnDes
   }
 
   /** Handles date selection in the month view. */
-  _dateSelected(date: D): void {
-    if (!this._dateAdapter.sameDate(date, this.selected)) {
+  _dateSelected(date: MatDateSelection<D>): void {
+    if (!MatDateSelection.isSame(this._dateAdapter, date, this.selected)) {
       this.selectedChange.emit(date);
     }
-  }
-
-  _rangeSelected(date: MatDateRange<D>): void {
-    this.selectedRangeChange.emit(date);
   }
 
   /** Handles year selection in the multiyear view. */

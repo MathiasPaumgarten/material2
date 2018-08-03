@@ -31,6 +31,7 @@ import {MatDatepickerToggle} from './datepicker-toggle';
 import {MAT_DATEPICKER_SCROLL_STRATEGY, MatDatepickerIntl, MatDatepickerModule} from './index';
 import {Directionality} from '@angular/cdk/bidi';
 import {BrowserDynamicTestingModule} from '@angular/platform-browser-dynamic/testing';
+import {MatDateSelection} from './datepicker-selection';
 
 describe('MatDatepicker', () => {
   const SUPPORTS_INTL = typeof Intl != 'undefined';
@@ -666,7 +667,7 @@ describe('MatDatepicker', () => {
         fixture.detectChanges();
 
         expect(testComponent.datepickerInput.value).toEqual(selected);
-        expect(testComponent.datepicker._selected).toEqual(selected);
+        expect(testComponent.datepicker._selected).toEqual(new MatDateSelection(selected));
       }));
 
       it('should update model when date is selected', fakeAsync(() => {
@@ -674,7 +675,7 @@ describe('MatDatepicker', () => {
         expect(testComponent.datepickerInput.value).toBeNull();
 
         let selected = new Date(2017, JAN, 1);
-        testComponent.datepicker.select(selected);
+        testComponent.datepicker._select(new MatDateSelection(selected));
         fixture.detectChanges();
         flush();
         fixture.detectChanges();
@@ -700,7 +701,8 @@ describe('MatDatepicker', () => {
 
         expect(inputEl.classList).toContain('ng-pristine');
 
-        testComponent.datepicker.select(new Date(2017, JAN, 1));
+
+        testComponent.datepicker._select(new MatDateSelection(new Date(2017, JAN, 1)));
         fixture.detectChanges();
         flush();
         fixture.detectChanges();
@@ -774,7 +776,7 @@ describe('MatDatepicker', () => {
 
         expect(inputEl.classList).toContain('ng-untouched');
 
-        testComponent.datepicker.select(new Date(2017, JAN, 1));
+        testComponent.datepicker._select(new MatDateSelection(new Date(2017, JAN, 1)));
         fixture.detectChanges();
         flush();
         fixture.detectChanges();
@@ -808,7 +810,7 @@ describe('MatDatepicker', () => {
         fixture.detectChanges();
 
         expect(testComponent.datepickerInput.value).toEqual(selected);
-        expect(testComponent.datepicker._selected).toEqual(selected);
+        expect(testComponent.datepicker._selected).toEqual(new MatDateSelection(selected));
       });
 
       it('should update formControl when date is selected', () => {
@@ -816,7 +818,7 @@ describe('MatDatepicker', () => {
         expect(testComponent.datepickerInput.value).toBeNull();
 
         let selected = new Date(2017, JAN, 1);
-        testComponent.datepicker.select(selected);
+        testComponent.datepicker._select(new MatDateSelection(selected));
         fixture.detectChanges();
 
         expect(testComponent.formControl.value).toEqual(selected);

@@ -473,7 +473,7 @@ describe('MatDatepicker', () => {
       it('should handle value changes when a datepicker is assigned after init', fakeAsync(() => {
         const fixture = createComponent(DelayedDatepicker, [MatNativeDateModule]);
         const testComponent: DelayedDatepicker = fixture.componentInstance;
-        const toSelect = new Date(2017, JAN, 1);
+        const toSelect = new MatDateSelection(new Date(2017, JAN, 1));
 
         fixture.detectChanges();
 
@@ -483,12 +483,12 @@ describe('MatDatepicker', () => {
         testComponent.assignedDatepicker = testComponent.datepicker;
         fixture.detectChanges();
 
-        testComponent.assignedDatepicker.select(toSelect);
+        testComponent.assignedDatepicker._select(toSelect);
         fixture.detectChanges();
         flush();
         fixture.detectChanges();
 
-        expect(testComponent.datepickerInput.value).toEqual(toSelect);
+        expect(testComponent.datepickerInput.value).toEqual(toSelect.date);
         expect(testComponent.datepicker._selected).toEqual(toSelect);
       }));
     });

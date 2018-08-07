@@ -17,12 +17,14 @@ import {
   Input,
   Optional,
   ViewEncapsulation,
+  HostBinding,
+  HostListener,
 } from '@angular/core';
 import {MatFormFieldControl, MatFormField} from '@angular/material/form-field';
 import {NgControl} from '@angular/forms';
 
 import { MatDatepicker } from './datepicker';
-import { Subject } from 'rxjs';
+import { Subject, merge } from 'rxjs';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import {DateAdapter, MAT_DATE_FORMATS, MatDateFormats} from '@angular/material/core';
 import {MatDateSelection} from './datepicker-selection';
@@ -31,11 +33,25 @@ import {MatBaseDatepickerInput} from './datepicker-input';
 
 let nextUniqueId = 0;
 
-// Largly copied from datepicker-input. there is definitley a better way for this
+// Largly copied from datepicker-input. There is definitley a better way for this
 // I didn't want to set matInput directives as that screws up the rest of the logic.
 // the should probably share some functionality.
-export class RangeInput<D> {
+export abstract class RangeInput<D> {
   _valueChange = new EventEmitter<D | null>();
+  _stateChanges = new Subject<void>();
+
+  get focused(): boolean { return this._focused; }
+  set focused(value: boolean) {
+    if (value !== this._focused) {
+      this._focused = value;
+      this._stateChanges.next();
+    }
+  }
+  private _focused: boolean = false;
+
+  @HostBinding('class') matRangeInput = 'mat-range-input';
+  @HostListener('focus') onFocus() { this.focused = true; }
+  @HostListener('blur') onblur() { this.focused = false; }
 
   @Input()
   get value(): D | null { return this._value; }
@@ -86,6 +102,10 @@ export class MatRangeEnd<D> extends RangeInput<D> {}
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<ng-content></ng-content>`,
+  styleUrls: ['datepicker-range-input.css'],
+  host: {
+    'class': 'mat-datepicker-range'
+  },
   providers: [{provide: MatFormFieldControl, useExisting: MatDatepickerRange}],
 })
 export class MatDatepickerRange<D> extends MatBaseDatepickerInput<D>
@@ -96,14 +116,10 @@ export class MatDatepickerRange<D> extends MatBaseDatepickerInput<D>
   @ContentChild(MatRangeEnd) end: MatRangeEnd<D>;
 
   @Input()
-  set matDatepicker(value: MatDatepicker<D>) {
-    this._matDatepicker = value;
-  }
+  set matDatepicker(value: MatDatepicker<D>) { this._matDatepicker = value; }
   private _matDatepicker: MatDatepicker<D>;
 
-  get value(): MatDateSelection<D> | null {
-    return this._value;
-  }
+  get value(): MatDateSelection<D> | null { return this._value; }
   set value(range: MatDateSelection<D> | null) {
     if (range) {
       this.start.value = range.start;
@@ -123,22 +139,6 @@ export class MatDatepickerRange<D> extends MatBaseDatepickerInput<D>
 
   ngControl: NgControl | null = null;
 
-  ngAfterContentInit() {
-    this.setup();
-    if (this._matDatepicker) {
-      this._matDatepicker._selectedChanged.subscribe((selected: MatDateSelection<D>) => {
-        this.start.value = selected.start;
-        this.end.value = selected.end;
-      });
-    }
-  }
-
-  private setup() {
-    if (this._matDatepicker && this.start && this.end) {
-      this._matDatepicker._registerInput(this);
-    }
-  }
-
   /**
    * Implemented as part of MatFormFieldControl.
    * @docs-private
@@ -155,19 +155,14 @@ export class MatDatepickerRange<D> extends MatBaseDatepickerInput<D>
   @Input() placeholder = '';
 
   /** Whether the control is focused. */
-  readonly focused: boolean = false;
+  focused: boolean = false;
 
   /**
    * Implemented as part of MatFormFieldControl.
    * @docs-private
    */
   get empty(): boolean {
-    return !!(
-      this.start &&
-      this.end &&
-      this.start.value &&
-      this.end.value
-    );
+    return (this.start && this.end && !this.start.value && !this.end.value);
   }
 
   /**
@@ -203,13 +198,34 @@ export class MatDatepickerRange<D> extends MatBaseDatepickerInput<D>
    * control it is assumed to be false.
    */
   readonly autofilled?: boolean;
+
+
   constructor(
-    private _formField: MatFormField,
+      private _formField: MatFormField,
       private _elementRef: ElementRef,
   ) {
     super();
     this.selection = new MatDateSelection<D>(null, null);
     this._value = this.selection;
+  }
+
+  ngAfterContentInit() {
+    if (this._matDatepicker && this.start && this.end) {
+      this._matDatepicker._registerInput(this);
+
+      this._matDatepicker._selectedChanged.subscribe((selected: MatDateSelection<D>) => {
+        this.start.value = selected.start;
+        this.end.value = selected.end;
+      });
+
+      merge(this.start._stateChanges, this.end._stateChanges).subscribe(() => {
+        const focus: boolean = this.start.focused || this.end.focused;
+        if (focus !== this.focused) {
+          this.focused = focus;
+          this.stateChanges.next();
+        }
+      });
+    }
   }
 
   /** Returns the palette used by the input's form field, if any. */

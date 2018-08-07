@@ -303,7 +303,7 @@ export class MatMonthView<D> implements AfterContentInit {
           return this._hasSameMonthAndYear(date, this.activeDate) ?
             this._dateAdapter.getDate(date) : null;
         })
-        .filter(date => !!(typeof date === 'number')) as number[];
+        .filter(date => typeof date === 'number') as number[];
   }
 
   /**

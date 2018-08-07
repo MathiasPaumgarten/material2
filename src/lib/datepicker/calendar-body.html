@@ -33,16 +33,19 @@
       [tabindex]="_isActiveCell(rowIndex, colIndex) ? 0 : -1"
       [class.mat-calendar-body-disabled]="!item.enabled"
       [class.mat-calendar-body-active]="_isActiveCell(rowIndex, colIndex)"
+      [class.mat-calendar-body-selected]="_inSelection(item.value)"
+      [class.mat-calendar-body-selected-first]="_isFirstSelected(item.value)"
+      [class.mat-calendar-body-selected-last]="_isLastSelected(item.value)"
       [attr.aria-label]="item.ariaLabel"
       [attr.aria-disabled]="!item.enabled || null"
-      [attr.aria-selected]="selectedValue === item.value"
+      [attr.aria-selected]="_inSelection(item.value)"
       (click)="_cellClicked(item)"
       [style.width.%]="100 / numCols"
       [style.paddingTop.%]="50 * cellAspectRatio / numCols"
       [style.paddingBottom.%]="50 * cellAspectRatio / numCols">
-    <div class="mat-calendar-body-cell-content"
-         [class.mat-calendar-body-selected]="selectedValue === item.value"
-         [class.mat-calendar-body-today]="todayValue === item.value">
+      <div class="mat-calendar-body-cell-content"
+           [class.mat-calendar-body-selected]="_inSelection(item.value)"
+           [class.mat-calendar-body-today]="todayValue === item.value">
       {{item.displayValue}}
     </div>
   </td>

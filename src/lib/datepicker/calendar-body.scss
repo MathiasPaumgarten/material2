@@ -33,6 +33,16 @@ $mat-calendar-body-cell-content-size: 100% - $mat-calendar-body-cell-content-mar
   text-align: center;
   outline: none;
   cursor: pointer;
+
+  &.mat-calendar-body-selected-first {
+    border-bottom-left-radius: 999px;
+    border-top-left-radius: 999px;
+  }
+
+  &.mat-calendar-body-selected-last {
+    border-bottom-right-radius: 999px;
+    border-top-right-radius: 999px;
+  }
 }
 
 .mat-calendar-body-disabled {

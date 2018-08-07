@@ -142,8 +142,8 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
     // If an explicit startAt is set we start there, otherwise we start at whatever the currently
     // selected value is.
     return this._startAt || (
-        this._input && this._input.selection ?
-            this._input.selection.date :
+        this._datepickerInput && this._datepickerInput.selection ?
+            this._datepickerInput.selection.date :
             null
     );
   }
@@ -159,7 +159,7 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
   @Input()
   get color(): ThemePalette {
     return this._color ||
-        (this._input ? this._input._getThemePalette() : undefined);
+        (this._datepickerInput ? this._datepickerInput._getThemePalette() : undefined);
   }
   set color(value: ThemePalette) {
     this._color = value;
@@ -180,8 +180,8 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
   /** Whether the datepicker pop-up should be disabled. */
   @Input()
   get disabled(): boolean {
-    return this._disabled === undefined && this._input ?
-        this._input.disabled : !!this._disabled;
+    return this._disabled === undefined && this._datepickerInput ?
+        this._datepickerInput.disabled : !!this._disabled;
   }
   set disabled(value: boolean) {
     const newValue = coerceBooleanProperty(value);
@@ -231,16 +231,16 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
 
   /** The minimum selectable date. */
   get _minDate(): D | null {
-    return this._input && this._input.min;
+    return this._datepickerInput && this._datepickerInput.min;
   }
 
   /** The maximum selectable date. */
   get _maxDate(): D | null {
-    return this._input && this._input.max;
+    return this._datepickerInput && this._datepickerInput.max;
   }
 
   get _dateFilter(): (date: D | null) => boolean {
-    return this._input && this._input._dateFilter;
+    return this._datepickerInput && this._datepickerInput._dateFilter;
   }
 
   /** A reference to the overlay when the calendar is opened as a popup. */
@@ -262,7 +262,7 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
   private _inputSubscription = Subscription.EMPTY;
 
   /** The input element this datepicker is associated with. */
-  _input: MatBaseDatepickerInput<D>;
+  _datepickerInput: MatBaseDatepickerInput<D>;
 
   /** Emits when the datepicker is disabled. */
   readonly _disabledChange = new Subject<boolean>();
@@ -318,13 +318,13 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
    * @param input The datepicker input to register with this datepicker.
    */
   _registerInput(input: MatBaseDatepickerInput<D>): void {
-    if (this._input) {
+    if (this._datepickerInput) {
       throw Error('A MatDatepicker can only be associated with a single input.');
     }
-    this._input = input;
+    this._datepickerInput = input;
     this._selected = input.selection;
     this._inputSubscription =
-        this._input._selectionChange.subscribe(
+        this._datepickerInput._selectionChange.subscribe(
           (value: MatDateSelection<D> | null) => this._selected = value);
   }
 
@@ -333,7 +333,7 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
     if (this._opened || this.disabled) {
       return;
     }
-    if (!this._input) {
+    if (!this._datepickerInput) {
       throw Error('Attempted to open an MatDatepicker with no associated input.');
     }
     if (this._document) {
@@ -441,7 +441,7 @@ export class MatDatepicker<D> implements OnDestroy, CanColor {
       this._popupRef.keydownEvents().pipe(filter(event => {
         // Closing on alt + up is only valid when there's an input associated with the datepicker.
         return event.keyCode === ESCAPE ||
-               (this._input && event.altKey && event.keyCode === UP_ARROW);
+               (this._datepickerInput && event.altKey && event.keyCode === UP_ARROW);
       }))
     ).subscribe(() => this.close());
   }

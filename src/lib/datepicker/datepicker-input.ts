@@ -82,6 +82,7 @@ export abstract class MatBaseDatepickerInput<D> {
   _disabledChange = new EventEmitter<boolean>();
 
   abstract getPopupConnectionElementRef(): ElementRef;
+  abstract getConnectedOverlayOrigin(): ElementRef;
   abstract _getThemePalette(): ThemePalette;
 }
 

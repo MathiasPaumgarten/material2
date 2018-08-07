@@ -58,8 +58,13 @@ export class MatCalendarBody {
   /** The value in the table that corresponds to today. */
   @Input() todayValue: number;
 
-  /** The value in the table that is currently selected. */
-  @Input() selectedValue: number;
+  /** The values in the table that are currently selected. */
+  @Input()
+  get selectedValue(): number[] { return this._selectedValue; }
+  set selectedValue(value: number[]) {
+    this._selectedValue = value.slice(0).sort((a, b) => a - b);
+  }
+  private _selectedValue: number[] = [];
 
   /** The minimum number of free cells needed to fit the label in the first row. */
   @Input() labelMinRequiredCells: number;
@@ -115,5 +120,20 @@ export class MatCalendarBody {
         this._elementRef.nativeElement.querySelector('.mat-calendar-body-active').focus();
       });
     });
+  }
+
+  /** Determines if the given date is a selected date. */
+  _inSelection(value: number): boolean {
+    return this._selectedValue.indexOf(value) > -1;
+  }
+
+  /** Determins if the given date is the first date of the selection */
+  _isFirstSelected(value: number): boolean {
+    return this._selectedValue.indexOf(value) === 0;
+  }
+
+  /** Determins if the given date is the last date of the selection */
+  _isLastSelected(value: number): boolean {
+    return this._selectedValue.indexOf(value) === this.selectedValue.length - 1;
   }
 }

@@ -81,6 +81,31 @@ export class MatDateSelection<D> {
     }
   }
 
+  getFullSelection(adapter: DateAdapter<D>): D[] {
+    if (this.isDate) {
+      return this.date ? [this.date] : [];
+    } else {
+      if (!this.start && !this.end) {
+        return [];
+      } else if (this.start && !this.end) {
+        return [this.start];
+      } else {
+        const comparison = adapter.compareDate(this.start!, this.end!) < 0;
+        const min: D = comparison ? this.start! : this.end!;
+        const max: D = comparison ? this.end! : this.start!;
+        const dates: D[] = [];
+        let currentDate: D = min;
+
+        while (currentDate <= max) {
+          dates.push(adapter.clone(currentDate));
+          currentDate = adapter.addCalendarDays(currentDate, 1);
+        }
+
+        return dates;
+      }
+    }
+  }
+
   static isSame<D>(
       adapter: DateAdapter<D>,
       a: MatDateSelection<D> | null,

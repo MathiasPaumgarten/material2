@@ -76,7 +76,7 @@ export class MatMonthView<D> implements AfterContentInit {
     // validate necessity for this:
     // this._selected = this._getValidDateOrNull(this._dateAdapter.deserialize(value));
     this._selected = value ? value.clone(this._dateAdapter) : null;
-    this._selectedDate = this._getDateInCurrentMonth(this._selected);
+    this._selectedDate = this._getDatesInCurrentMonth(this._selected);
   }
   private _selected: MatDateSelection<D> | null;
 
@@ -124,7 +124,7 @@ export class MatMonthView<D> implements AfterContentInit {
    * The date of the month that the currently selected Date falls on.
    * Null if the currently selected Date is in another month.
    */
-  _selectedDate: number | null;
+  _selectedDate: number[] = [];
 
   /** The date of the month that today falls on. Null if today is in another month. */
   _todayDate: number | null;
@@ -170,7 +170,7 @@ export class MatMonthView<D> implements AfterContentInit {
         this._userSelection.emit();
       }
     } else {
-      if (this._selectedDate != date) {
+      if (this._selectedDate[0] != date) {
         this.selectedChange.emit(this._makeDateSelection(date));
       }
 
@@ -243,7 +243,7 @@ export class MatMonthView<D> implements AfterContentInit {
 
   /** Initializes this month view. */
   _init() {
-    this._selectedDate = this._getDateInCurrentMonth(this.selected);
+    this._selectedDate = this._getDatesInCurrentMonth(this._selected);
     this._todayDate =
         this._getDateInCurrentMonth(new MatDateSelection<D>(this._dateAdapter.today()));
     this._monthLabel =
@@ -291,6 +291,19 @@ export class MatMonthView<D> implements AfterContentInit {
         (!this.dateFilter || this.dateFilter(date)) &&
         (!this.minDate || this._dateAdapter.compareDate(date, this.minDate) >= 0) &&
         (!this.maxDate || this._dateAdapter.compareDate(date, this.maxDate) <= 0);
+  }
+
+  private _getDatesInCurrentMonth(selection: MatDateSelection<D> | null): number[] {
+    if (!selection) {
+      return [];
+    }
+
+    return selection.getFullSelection(this._dateAdapter)
+        .map(date => {
+          return this._hasSameMonthAndYear(date, this.activeDate) ?
+            this._dateAdapter.getDate(date) : null;
+        })
+        .filter(date => !!(typeof date === 'number')) as number[];
   }
 
   /**
